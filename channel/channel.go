@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func main(){
+func channels(){
 	 greeting := make(chan string)
 	 greetString := "Hello"
 
