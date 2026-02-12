@@ -16,7 +16,7 @@ import (
  
 // }
 
-func main(){
+func buffered_channel(){
 	// ====================BLOCKING ON RECIEVER ONLY IF BUFFER IS  EMPTY
 	ch := make(chan int ,2 )
    ch <-1

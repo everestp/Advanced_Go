@@ -21,7 +21,7 @@ func channels(){
 	 receiver := <- greeting
 	 fmt.Println(receiver)
 	 receiver = <- greeting
-
+ 
 	 fmt.Println(receiver)
 	 for range 5 {
 		rcvr := <-greeting
