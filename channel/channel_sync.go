@@ -2,66 +2,93 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"sync"
 	"time"
 )
 
-// func main(){
-// 	done := make(chan struct{})
+// Future Reference: The "Empty Struct" Signal
+// Using 'chan struct{}' is a memory-efficient way to send signals. 
+// Since struct{} occupies 0 bytes, it's the idiomatic choice when 
+// you don't care about the data, only that "something happened."
 
-// 	go func(){
-// 		fmt.Println("Working")
-// 		  time.Sleep(2 * time.Second)
-// 		 done <- struct{}{}
+func signalPattern() {
+	done := make(chan struct{})
 
-// 	}()
+	go func() {
+		// Logic Block: Simulate a background task.
+		fmt.Println("Worker: Starting task...")
+		time.Sleep(1 * time.Second)
+		
+		// Signal completion by sending an empty struct.
+		done <- struct{}{}
+	}()
 
-// 	<-done
-// 	fmt.Println("Finished")
-// }
+	// Logic Block: Block execution until the signal is received.
+	<-done
+	fmt.Println("Main: Signal received, moving on.")
+}
 
-// func main(){
-// 	ch := make(chan int)
-// 	go func() {
-// 	  ch <- 9	 // Blocking until the value is recieved
-// 	  fmt.Println("Sent value")
-// 	}()
+// Future Reference: sync.WaitGroup vs. Channels for Sync
+// While channels can synchronize goroutines, sync.WaitGroup is 
+// specifically designed for "Wait for All" scenarios. It is more 
+// readable and performant when tracking multiple concurrent tasks.
 
-// 	value := <-ch       // Blocking until the value is send
-// 	fmt.Println(value)
-// }
+func multiWorkerPattern() {
+	var wg sync.WaitGroup
+	numWorkers := 3
+
+	for i := range numWorkers {
+		// Increment the counter for each goroutine launched.
+		wg.Add(1)
+		
+		go func(id int) {
+			// Logic Block: Ensure Done() is called even if the function panics.
+			defer wg.Done()
+			
+			fmt.Printf("Worker %d: Processing...\n", id)
+			time.Sleep(500 * time.Millisecond)
+		}(i)
+	}
+
+	// Logic Block: Block until the WaitGroup counter hits zero.
+	wg.Wait()
+	fmt.Println("All workers finished successfully.")
+}
+
+// Future Reference: Avoiding Channel Deadlocks
+// A 'for range' loop on a channel will continue until the channel 
+// is closed. If the sender never calls 'close()', the receiver 
+// hangs forever, triggering a deadlock panic.
 
 
-// func main(){
-// 	numGoroutines :=3 
-// 	done := make(chan int ,3 )
 
-// 	for  i:= range numGoroutines{
-// 		go func(id int) {
-// 			fmt.Printf("Goroutine %d working ...\n",id)
-// 			time.Sleep(time.Second)
-// 			done <- id // SENDING SIGNAL OF COMPLETION
-// 		}(i)
-// 	}
-// 	for range numGoroutines{
-// 		<-done // Wait for each go routine to finihsed
+func dataExchangePattern() {
+	dataCh := make(chan string)
 
-// 	}
-// 	fmt.Println("All goroutine is fineshed")
-// }
+	go func() {
+		// Logic Block: Clean up by closing the channel when production finishes.
+		defer close(dataCh)
 
-//======SYNC DATA EXCHANGE=====
-func channel_sync(){
-   data := make(chan string)
-    go func() {
-		for i := range 5{
-			 data <- "hello" + string(i)
+		for i := range 3 {
+			// Using strconv.Itoa is necessary to convert int to "string" digits.
+			dataCh <- "Payload " + strconv.Itoa(i)
 		}
 	}()
 
-   for value := range data{
-	fmt.Println("Received value", value,":", time.Now() )
-   }
+	// Logic Block: Iteratively drain the channel.
+	for val := range dataCh {
+		fmt.Println("Received:", val)
+	}
+}
 
+func channel_sync() {
+	fmt.Println("--- Signal Pattern ---")
+	signalPattern()
 
+	fmt.Println("\n--- Multi-Worker Pattern ---")
+	multiWorkerPattern()
 
+	fmt.Println("\n--- Data Exchange Pattern ---")
+	dataExchangePattern()
 }
